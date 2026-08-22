@@ -2,18 +2,12 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
->
-
-<title>JANコード読み取り</title>
+<title>JAN読み取りテスト</title>
 
 <style>
-
 html,
 body {
   margin: 0;
@@ -56,6 +50,9 @@ h2 {
   background: #000;
 }
 
+/*
+ * JAN用の横長スキャン枠
+ */
 #scanFrame {
   position: absolute;
   left: 5%;
@@ -108,14 +105,12 @@ button {
 .hidden {
   display: none;
 }
-
 </style>
-
 </head>
 
 <body>
 
-<h2>📷 JANコード読み取り</h2>
+<h2>📷 JANコード読み取りテスト</h2>
 
 <div id="message">
 「カメラを起動」を押してください。
@@ -173,13 +168,6 @@ let scanning = false;
 
 
 /*
- * Apps Script WebアプリURL
- */
-const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
-
-
-/*
  * カメラ開始
  */
 async function startScanner() {
@@ -215,7 +203,7 @@ async function startScanner() {
   if (!window.ZXingBrowser) {
 
     message.textContent =
-      "JAN読み取り機能の読み込みに失敗しました。";
+      "ZXingの読み込みに失敗しました。";
 
     return;
 
@@ -228,6 +216,13 @@ async function startScanner() {
       "カメラを起動しています…";
 
 
+    /*
+     * ZXing公式方式。
+     *
+     * deviceIdを指定しない。
+     * facingMode: environment により
+     * 背面カメラを優先。
+     */
     codeReader =
       new ZXingBrowser.BrowserMultiFormatReader();
 
@@ -282,6 +277,9 @@ async function startScanner() {
                 "JANコードを読み取りました。";
 
 
+              /*
+               * カメラ停止
+               */
               if (controls) {
 
                 controls.stop();
@@ -294,33 +292,10 @@ async function startScanner() {
               if (codeReader) {
 
                 try {
-
                   codeReader.reset();
-
                 } catch (e) {}
 
               }
-
-
-              /*
-               * Apps Scriptのcamera.htmlへ
-               * JANを渡す
-               */
-              const cameraURL =
-                APPS_SCRIPT_URL +
-                "?camera=1&jan=" +
-                encodeURIComponent(jan);
-
-
-              setTimeout(
-                function() {
-
-                  window.location.href =
-                    cameraURL;
-
-                },
-                500
-              );
 
             }
 
@@ -376,9 +351,7 @@ function stopScanner() {
   if (controls) {
 
     try {
-
       controls.stop();
-
     } catch (e) {}
 
     controls = null;
@@ -389,9 +362,7 @@ function stopScanner() {
   if (codeReader) {
 
     try {
-
       codeReader.reset();
-
     } catch (e) {}
 
     codeReader = null;
