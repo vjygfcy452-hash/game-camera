@@ -2,16 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, viewport-fit=cover"
->
-
-<title>JANコード読み取り</title>
+<title>JANコード読み取りテスト</title>
 
 <style>
-
 body {
   margin: 0;
   padding: 20px;
@@ -25,79 +20,48 @@ h2 {
   margin: 10px 0 15px;
 }
 
-.message {
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 15px 0;
+video {
+  width: 100%;
+  max-width: 600px;
+  background: #000;
+  border-radius: 12px;
 }
 
-.scanButton {
-  display: block;
+.message {
+  margin: 15px 0;
+  line-height: 1.6;
+}
+
+button {
   width: 100%;
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 16px;
+  max-width: 600px;
+  padding: 15px;
+  margin-top: 10px;
   border: 0;
   border-radius: 12px;
   background: #d97b5f;
   color: white;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: bold;
 }
-
-.closeButton {
-  background: #555;
-  font-size: 15px;
-}
-
-#preview {
-  width: 100%;
-  max-width: 500px;
-  max-height: 60vh;
-  object-fit: contain;
-  margin: 10px auto;
-  border-radius: 12px;
-  display: none;
-}
-
-#cameraInput {
-  display: none;
-}
-
 </style>
-
 </head>
 
 <body>
 
-<h2>📷 JANコード読み取り</h2>
+<h2>📷 JANコード読み取りテスト</h2>
+
+<video id="video" autoplay playsinline muted></video>
 
 <div id="message" class="message">
 「カメラを起動」を押してください。
 </div>
 
-<input
-  id="cameraInput"
-  type="file"
-  accept="image/*"
-  capture="environment"
->
-
-<button
-  class="scanButton"
-  onclick="openCamera()"
->
+<button onclick="startCamera()">
 📷 カメラを起動
 </button>
 
-<img
-  id="preview"
->
-
-<button
-  class="scanButton closeButton"
-  onclick="closeCamera()"
->
+<button onclick="stopCamera()" style="background:#555">
 カメラを閉じる
 </button>
 
@@ -105,155 +69,209 @@ h2 {
 
 <script>
 
-const input =
-  document.getElementById("cameraInput");
+let stream = null;
+let reader = null;
+let controls = null;
 
-const message =
-  document.getElementById("message");
-
-const preview =
-  document.getElementById("preview");
 
 /* =========================
    カメラ起動
 ========================= */
 
-function openCamera() {
+async function startCamera() {
 
-  message.textContent =
-    "カメラを起動しています…";
+  const video =
+    document.getElementById("video");
 
-  /*
-   * iPhone / Safariでは
-   * 標準カメラが起動する
-   */
+  const message =
+    document.getElementById("message");
 
-  input.click();
+  try {
 
-}
+    message.textContent =
+      "カメラを起動しています…";
 
-/* =========================
-   写真取得
-========================= */
+    /*
+     * iPhoneの背面カメラを指定
+     */
 
-input.addEventListener(
-  "change",
-  async function(event) {
+    stream =
+      await navigator.mediaDevices.getUserMedia({
 
-    const file =
-      event.target.files &&
-      event.target.files[0];
+        video: {
+          facingMode: {
+            ideal: "environment"
+          },
 
-    if (!file) {
+          width: {
+            ideal: 1280
+          },
+
+          height: {
+            ideal: 720
+          }
+
+        },
+
+        audio: false
+
+      });
+
+
+    video.srcObject = stream;
+
+    await video.play();
+
+
+    message.textContent =
+      "カメラが起動しました。JANバーコードを映してください。";
+
+
+    /*
+     * ZXing確認
+     */
+
+    if (!window.ZXingBrowser) {
 
       message.textContent =
-        "カメラがキャンセルされました。";
+        "バーコード読み取り機能の読み込みに失敗しました。";
 
       return;
 
     }
 
+
+    startScanner();
+
+
+  } catch (error) {
+
+    console.error(error);
+
     message.textContent =
-      "JANコードを読み取っています…";
+      "カメラを起動できませんでした。";
 
-    const url =
-      URL.createObjectURL(file);
+  }
 
-    preview.src = url;
-    preview.style.display = "block";
+}
+
+
+/* =========================
+   JAN読み取り
+========================= */
+
+function startScanner() {
+
+  const video =
+    document.getElementById("video");
+
+  const message =
+    document.getElementById("message");
+
+
+  reader =
+    new ZXingBrowser.BrowserMultiFormatReader();
+
+
+  message.textContent =
+    "JANバーコードをカメラに映してください。";
+
+
+  /*
+   * カメラ映像からリアルタイム読み取り
+   */
+
+  controls =
+    reader.decodeFromVideoElement(
+      video,
+
+      function(result, error) {
+
+        if (!result) {
+          return;
+        }
+
+
+        const jan =
+          String(result.text || "")
+            .replace(/\D/g, "");
+
+
+        /*
+         * JAN-13だけ採用
+         */
+
+        if (!/^\d{13}$/.test(jan)) {
+          return;
+        }
+
+
+        message.textContent =
+          "✅ JANを読み取りました！\n" +
+          jan;
+
+
+        /*
+         * 読み取り成功
+         */
+
+        stopCamera();
+
+      }
+
+    );
+
+}
+
+
+/* =========================
+   カメラ停止
+========================= */
+
+function stopCamera() {
+
+  if (controls) {
 
     try {
 
-      if (!window.ZXingBrowser) {
+      controls.stop();
 
-        throw new Error(
-          "バーコード読み取り機能を読み込めませんでした。"
-        );
+    } catch (e) {}
 
-      }
-
-      const reader =
-        new ZXingBrowser.BrowserMultiFormatReader();
-
-      const result =
-        await reader.decodeFromImageUrl(url);
-
-      if (
-        result &&
-        result.text
-      ) {
-
-        const jan =
-          String(result.text)
-            .replace(/\D/g, "");
-
-        if (jan.length === 13) {
-
-          message.textContent =
-            "JANを読み取りました。";
-
-          /*
-           * 親画面へJANを返す
-           */
-
-          window.parent.postMessage(
-            {
-              type: "JAN_SCANNED",
-              jan: jan
-            },
-            "*"
-          );
-
-          setTimeout(
-            function() {
-
-              closeCamera();
-
-            },
-            700
-          );
-
-          return;
-
-        }
-
-      }
-
-      message.textContent =
-        "JANコードを読み取れませんでした。もう一度撮影してください。";
-
-    } catch (error) {
-
-      console.error(error);
-
-      message.textContent =
-        "JANコードを読み取れませんでした。";
-
-    } finally {
-
-      URL.revokeObjectURL(url);
-
-    }
+    controls = null;
 
   }
-);
 
-/* =========================
-   閉じる
-========================= */
 
-function closeCamera() {
+  if (reader) {
 
-  try {
+    try {
 
-    window.parent.postMessage(
-      {
-        type: "CAMERA_CLOSED"
-      },
-      "*"
-    );
+      reader.reset();
 
-  } catch (e) {}
+    } catch (e) {}
+
+    reader = null;
+
+  }
+
+
+  if (stream) {
+
+    stream
+      .getTracks()
+      .forEach(function(track) {
+
+        track.stop();
+
+      });
+
+    stream = null;
+
+  }
+
+
+  document.getElementById("video").srcObject = null;
 
 }
 
