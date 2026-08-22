@@ -218,19 +218,17 @@ async function startScanner() {
   const resultBox =
     document.getElementById("result");
 
-  const copyButton =
-    document.getElementById("copyButton");
-
   const video =
     document.getElementById("video");
 
 
   resultBox.classList.add("hidden");
 
-  copyButton.classList.add("hidden");
+  document
+    .getElementById("copyButton")
+    .classList.add("hidden");
 
   currentJAN = "";
-
 
   startButton.classList.add("hidden");
 
@@ -256,11 +254,7 @@ async function startScanner() {
 
 
     /*
-     * JAN読み取りの基準版と同じ方式
-     *
-     * deviceIdを指定しない。
-     * facingMode: environment により
-     * 背面カメラを優先。
+     * 元の正常版と同じカメラ方式
      */
     codeReader =
       new ZXingBrowser.BrowserMultiFormatReader();
@@ -314,9 +308,9 @@ async function startScanner() {
               );
 
 
-              copyButton.classList.remove(
-                "hidden"
-              );
+              document
+                .getElementById("copyButton")
+                .classList.remove("hidden");
 
 
               message.textContent =
@@ -392,9 +386,7 @@ async function startScanner() {
 async function copyJAN() {
 
   if (!currentJAN) {
-
     return;
-
   }
 
 
@@ -408,21 +400,16 @@ async function copyJAN() {
     document
       .getElementById("message")
       .textContent =
-        "JANコードをコピーしました。ゲーム管理のJAN欄に貼り付けてください。";
+        "JANコードをコピーしました。";
 
 
   } catch (error) {
 
-    /*
-     * コピー機能の予備処理
-     */
     const textarea =
       document.createElement("textarea");
 
-
     textarea.value =
       currentJAN;
-
 
     textarea.style.position =
       "fixed";
@@ -430,21 +417,17 @@ async function copyJAN() {
     textarea.style.left =
       "-9999px";
 
-
     document.body.appendChild(
       textarea
     );
-
 
     textarea.focus();
 
     textarea.select();
 
-
     document.execCommand(
       "copy"
     );
-
 
     document.body.removeChild(
       textarea
@@ -454,7 +437,7 @@ async function copyJAN() {
     document
       .getElementById("message")
       .textContent =
-        "JANコードをコピーしました。ゲーム管理のJAN欄に貼り付けてください。";
+        "JANコードをコピーしました。";
 
   }
 
@@ -529,7 +512,7 @@ function stopScanner() {
 
 
   document
-    getElementById("message")
+    .getElementById("message")
     .textContent =
       "「カメラを起動」を押してください。";
 
