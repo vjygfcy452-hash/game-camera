@@ -127,7 +127,7 @@ h2 {
 
 <button
   class="scanButton closeButton"
-  onclick="closeCamera()"
+  onclick="goToGameManager()"
 >
 ゲーム管理へ戻る
 </button>
@@ -235,9 +235,6 @@ input.addEventListener(
           currentJAN = jan;
 
 
-          /*
-           * JAN表示
-           */
           resultBox.textContent =
             jan;
 
@@ -245,9 +242,6 @@ input.addEventListener(
             "block";
 
 
-          /*
-           * コピーするボタンを表示
-           */
           copyButton.style.display =
             "block";
 
@@ -307,14 +301,10 @@ async function copyJAN() {
 
 
     message.textContent =
-      "JANコードをコピーしました。ゲーム管理画面のJAN欄に貼り付けてください。";
-
+      "JANコードをコピーしました。";
 
   } catch (error) {
 
-    /*
-     * コピー機能の予備処理
-     */
     const textarea =
       document.createElement("textarea");
 
@@ -345,7 +335,7 @@ async function copyJAN() {
 
 
     message.textContent =
-      "JANコードをコピーしました。ゲーム管理画面のJAN欄に貼り付けてください。";
+      "JANコードをコピーしました。";
 
   }
 
@@ -355,7 +345,7 @@ async function copyJAN() {
 /*
  * ゲーム管理画面へ戻る
  */
-function closeCamera() {
+function goToGameManager() {
 
   window.location.href =
     "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
