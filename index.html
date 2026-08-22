@@ -1,10 +1,18 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>JAN読み取りテスト</title>
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<title>JANコード読み取り</title>
+
 <style>
+
 html,
 body {
   margin: 0;
@@ -15,18 +23,22 @@ body {
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
 body {
   text-align: center;
 }
+
 h2 {
   margin: 18px 10px 10px;
 }
+
 #message {
   min-height: 45px;
   padding: 0 15px;
   font-size: 16px;
   line-height: 1.5;
 }
+
 #cameraArea {
   position: relative;
   width: 100%;
@@ -35,15 +47,14 @@ h2 {
   background: #000;
   overflow: hidden;
 }
+
 #video {
   display: block;
   width: 100%;
   height: auto;
   background: #000;
 }
-/*
- * JAN用の横長スキャン枠
- */
+
 #scanFrame {
   position: absolute;
   left: 5%;
@@ -55,6 +66,7 @@ h2 {
   pointer-events: none;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
 }
+
 #scanLabel {
   position: absolute;
   left: 0;
@@ -64,6 +76,7 @@ h2 {
   font-weight: bold;
   text-shadow: 0 2px 4px #000;
 }
+
 button {
   display: block;
   width: calc(100% - 30px);
@@ -77,9 +90,11 @@ button {
   font-size: 17px;
   font-weight: bold;
 }
+
 #stopButton {
   background: #555;
 }
+
 #result {
   margin: 20px 15px;
   padding: 15px;
@@ -88,37 +103,50 @@ button {
   font-size: 20px;
   font-weight: bold;
 }
+
 .hidden {
   display: none;
 }
+
 </style>
+
 </head>
+
 <body>
-<h2>📷 JANコード読み取りテスト</h2>
+
+<h2>📷 JANコード読み取り</h2>
+
 <div id="message">
 「カメラを起動」を押してください。
 </div>
+
 <button
   id="startButton"
   onclick="startScanner()"
 >
 📷 カメラを起動
 </button>
+
 <div
   id="cameraArea"
   class="hidden"
 >
+
   <video
     id="video"
     autoplay
     muted
     playsinline
   ></video>
+
   <div id="scanFrame"></div>
+
   <div id="scanLabel">
     JANコードを緑の枠に合わせてください
   </div>
+
 </div>
+
 <button
   id="stopButton"
   class="hidden"
@@ -126,101 +154,204 @@ button {
 >
 カメラを停止
 </button>
+
 <div
   id="result"
   class="hidden"
 ></div>
+
+
 <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
+
+
 <script>
+
 let codeReader = null;
 let controls = null;
 let scanning = false;
+
+
+/*
+ * Apps Script WebアプリURL
+ */
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
+
+
 /*
  * カメラ開始
  */
 async function startScanner() {
+
   const message =
     document.getElementById("message");
+
   const cameraArea =
     document.getElementById("cameraArea");
+
   const startButton =
     document.getElementById("startButton");
+
   const stopButton =
     document.getElementById("stopButton");
+
   const resultBox =
     document.getElementById("result");
+
   const video =
     document.getElementById("video");
+
+
   resultBox.classList.add("hidden");
+
   startButton.classList.add("hidden");
+
   stopButton.classList.remove("hidden");
+
   cameraArea.classList.remove("hidden");
+
+
   if (!window.ZXingBrowser) {
+
     message.textContent =
-      "ZXingの読み込みに失敗しました。";
+      "JAN読み取り機能の読み込みに失敗しました。";
+
     return;
+
   }
+
+
   try {
+
     message.textContent =
       "カメラを起動しています…";
-    /*
-     * ZXing公式方式。
-     *
-     * deviceIdを指定しない。
-     * facingMode: environment により
-     * 背面カメラを優先。
-     */
+
+
     codeReader =
       new ZXingBrowser.BrowserMultiFormatReader();
+
+
     scanning = true;
+
+
     controls =
       await codeReader.decodeFromVideoDevice(
+
         undefined,
+
         video,
+
         function(result, error) {
+
           if (!scanning) {
             return;
           }
+
+
           if (
             result &&
             result.text
           ) {
+
             const raw =
               String(result.text);
+
+
             const jan =
               raw.replace(/\D/g, "");
+
+
             if (
               /^\d{13}$/.test(jan)
             ) {
+
               scanning = false;
+
+
               resultBox.textContent =
                 "読み取り成功： " + jan;
+
+
               resultBox.classList.remove(
                 "hidden"
               );
+
+
               message.textContent =
                 "JANコードを読み取りました。";
+
+
               /*
                * カメラ停止
                */
               if (controls) {
+
                 controls.stop();
+
                 controls = null;
+
               }
+
+
               if (codeReader) {
+
                 try {
+
                   codeReader.reset();
+
                 } catch (e) {}
+
               }
+
+
+              /*
+               * JANをApps Scriptへ渡す
+               *
+               * Apps Script側で
+               * LATEST_JANとして保存する。
+               */
+              const targetURL =
+                APPS_SCRIPT_URL +
+                "?receiveJAN=1" +
+                "&jan=" +
+                encodeURIComponent(jan);
+
+
+              /*
+               * JAN送信後、
+               * ゲーム管理画面へ移動
+               */
+              setTimeout(
+                function() {
+
+                  window.location.href =
+                    targetURL;
+
+                },
+                500
+              );
+
             }
+
           }
+
         }
+
       );
+
+
     message.textContent =
       "JANコードを緑の枠に合わせてください。";
+
+
   } catch (error) {
+
     console.error(error);
+
+
     scanning = false;
+
+
     message.textContent =
       "カメラ起動エラー：" +
       (
@@ -228,58 +359,100 @@ async function startScanner() {
           ? error.message
           : error
       );
+
+
     startButton.classList.remove(
       "hidden"
     );
+
     stopButton.classList.add(
       "hidden"
     );
+
   }
+
 }
+
+
 /*
  * カメラ停止
  */
 function stopScanner() {
+
   scanning = false;
+
+
   if (controls) {
+
     try {
+
       controls.stop();
+
     } catch (e) {}
+
     controls = null;
+
   }
+
+
   if (codeReader) {
+
     try {
+
       codeReader.reset();
+
     } catch (e) {}
+
     codeReader = null;
+
   }
+
+
   const video =
     document.getElementById("video");
+
+
   if (
     video &&
     video.srcObject
   ) {
+
     video.srcObject
       .getTracks()
       .forEach(function(track) {
+
         track.stop();
+
       });
+
     video.srcObject = null;
+
   }
+
+
   document
     .getElementById("cameraArea")
     .classList.add("hidden");
+
+
   document
     .getElementById("stopButton")
     .classList.add("hidden");
+
+
   document
     .getElementById("startButton")
     .classList.remove("hidden");
+
+
   document
     .getElementById("message")
     .textContent =
       "「カメラを起動」を押してください。";
+
 }
+
 </script>
+
 </body>
 </html>
