@@ -129,7 +129,7 @@ h2 {
   class="scanButton closeButton"
   onclick="closeCamera()"
 >
-カメラを閉じる
+ゲーム管理へ戻る
 </button>
 
 
@@ -353,11 +353,12 @@ async function copyJAN() {
 
 
 /*
- * 閉じる
+ * ゲーム管理画面へ戻る
  */
 function closeCamera() {
 
-  window.history.back();
+  window.location.href =
+    "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
 
 }
 
