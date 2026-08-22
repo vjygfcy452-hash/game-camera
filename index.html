@@ -1,10 +1,18 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
 <title>JANコード読み取り</title>
+
 <style>
+
 body {
   margin: 0;
   padding: 20px;
@@ -13,131 +21,55 @@ body {
   color: white;
   text-align: center;
 }
+
 h2 {
-  margin: 10px 0 15px;
+  margin-top: 40px;
 }
-#reader {
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-}
-#message {
-  margin: 15px 0;
-  font-size: 15px;
-  line-height: 1.6;
-}
+
 button {
   width: 100%;
   max-width: 500px;
-  padding: 15px;
-  margin-top: 10px;
+  padding: 16px;
+  margin-top: 30px;
   border: 0;
   border-radius: 12px;
-  background: #d97b5f;
+  background: #6689a5;
   color: white;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: bold;
 }
+
 </style>
+
 </head>
+
 <body>
+
 <h2>📷 JANコード読み取り</h2>
-<div id="reader"></div>
-<div id="message">
-「カメラを起動」を押してください。
-</div>
-<button onclick="startScanner()">
+
+<p>
+下のボタンからカメラを起動してください。
+</p>
+
+<button onclick="openCamera()">
 📷 カメラを起動
 </button>
-<button onclick="stopScanner()" style="background:#555">
-カメラを閉じる
-</button>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+
 <script>
-let scanner = null;
-let running = false;
-/* =========================
-   カメラ起動
-========================= */
-async function startScanner() {
-  const message =
-    document.getElementById("message");
-  if (running) {
-    return;
-  }
-  message.textContent =
-    "カメラを起動しています…";
-  try {
-    scanner =
-      new Html5Qrcode("reader");
-    const config = {
-      fps: 10,
-      qrbox: {
-        width: 300,
-        height: 150
-      },
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.EAN_13
-      ],
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: false
-      }
-    };
-    await scanner.start(
-      {
-        facingMode: "environment"
-      },
-      config,
-      function(decodedText) {
-        const jan =
-          String(decodedText || "")
-            .replace(/\D/g, "");
-        if (!/^\d{13}$/.test(jan)) {
-          return;
-        }
-        message.textContent =
-          "✅ JANを読み取りました！\n" +
-          jan;
-        running = false;
-        stopScanner();
-      },
-      function(errorMessage) {
-        /*
-         * 読み取り途中のエラーは無視
-         */
-      }
-    );
-    running = true;
-    message.textContent =
-      "カメラが起動しました。\nJANバーコードを枠内に映してください。";
-  } catch (error) {
-    console.error(error);
-    running = false;
-    message.textContent =
-      "カメラを起動できませんでした。\n" +
-      (error && error.message
-        ? error.message
-        : error);
-  }
+
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
+
+
+function openCamera() {
+
+  window.location.href =
+    APPS_SCRIPT_URL + "?camera=1";
+
 }
-/* =========================
-   カメラ停止
-========================= */
-async function stopScanner() {
-  if (!scanner) {
-    return;
-  }
-  try {
-    if (running) {
-      await scanner.stop();
-    }
-  } catch (e) {}
-  try {
-    scanner.clear();
-  } catch (e) {}
-  scanner = null;
-  running = false;
-}
+
 </script>
+
 </body>
 </html>
