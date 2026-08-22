@@ -49,6 +49,7 @@ h2 {
 
 .copyButton {
   background: #6689a5;
+  display: none;
 }
 
 .closeButton {
@@ -71,6 +72,7 @@ h2 {
 }
 
 #result {
+  display: none;
   margin: 20px auto;
   padding: 15px;
   max-width: 500px;
@@ -79,13 +81,8 @@ h2 {
   font-size: 24px;
   font-weight: bold;
   letter-spacing: 2px;
-  display: none;
   user-select: text;
   -webkit-user-select: text;
-}
-
-#copyButton {
-  display: none;
 }
 
 </style>
@@ -249,14 +246,14 @@ input.addEventListener(
 
 
           /*
-           * コピー
+           * コピーするボタンを表示
            */
           copyButton.style.display =
             "block";
 
 
           message.textContent =
-            "JANを読み取りました。コピーしてゲーム管理画面に貼り付けてください。";
+            "JANを読み取りました。";
 
 
           return;
@@ -294,6 +291,9 @@ async function copyJAN() {
 
   if (!currentJAN) {
 
+    message.textContent =
+      "コピーするJANコードがありません。";
+
     return;
 
   }
@@ -312,15 +312,26 @@ async function copyJAN() {
 
   } catch (error) {
 
+    /*
+     * コピー機能の予備処理
+     */
     const textarea =
       document.createElement("textarea");
 
     textarea.value =
       currentJAN;
 
+    textarea.style.position =
+      "fixed";
+
+    textarea.style.left =
+      "-9999px";
+
     document.body.appendChild(
       textarea
     );
+
+    textarea.focus();
 
     textarea.select();
 
