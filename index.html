@@ -1,50 +1,30 @@
 function doGet(e) {
 
-  /*
-   * CameraからJANを受け取った場合
-   */
   if (
     e &&
     e.parameter &&
     e.parameter.jan
   ) {
-
-    receiveJAN(
-      e.parameter.jan
-    );
-
+    receiveJAN(e.parameter.jan);
   }
 
-
-  /*
-   * Camera画面
-   */
   if (
     e &&
     e.parameter &&
     e.parameter.camera === "1"
   ) {
-
     return HtmlService
       .createHtmlOutputFromFile("Camera");
-
   }
 
-
-  /*
-   * ゲーム管理画面
-   */
   return HtmlService.createHtmlOutput(`
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>ゲーム管理</title>
 
 <style>
-
 body {
   font-family: sans-serif;
   margin: 0;
@@ -53,103 +33,66 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
-
-h1 {
-  margin-top: 10px;
-}
-
-input,
-select,
-textarea,
-button {
+h1 { margin-top: 10px; }
+input, select, textarea, button {
   box-sizing: border-box;
   width: 100%;
   padding: 10px;
   margin-top: 6px;
   font-size: 16px;
 }
-
-button {
-  cursor: pointer;
-}
-
+button { cursor: pointer; }
 label {
   display: block;
   margin-top: 12px;
   font-weight: bold;
 }
-
 .box {
   border: 1px solid #ccc;
   padding: 15px;
   margin-top: 25px;
 }
-
 .message {
   margin-top: 10px;
   font-weight: bold;
 }
-
 .cameraButton {
   background: #6689a5;
   color: white;
   font-weight: bold;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 15px;
 }
-
-th,
-td {
+th, td {
   border: 1px solid #ccc;
   padding: 8px;
   vertical-align: middle;
 }
-
-th {
-  background: #f3f3f3;
-}
-
+th { background: #f3f3f3; }
 .status {
   width: auto;
   padding: 6px;
   margin: 0;
 }
-
 .action {
   width: auto;
   padding: 6px 10px;
   margin: 2px;
   font-size: 14px;
 }
-
 @media (max-width: 700px) {
-
-  body {
-    padding: 10px;
-  }
-
-  table {
-    font-size: 13px;
-  }
-
-  th,
-  td {
-    padding: 5px;
-  }
-
+  body { padding: 10px; }
+  table { font-size: 13px; }
+  th, td { padding: 5px; }
   .action {
     display: block;
     width: 100%;
   }
-
 }
-
 </style>
-
 </head>
 
 <body>
@@ -180,49 +123,32 @@ JANから楽天で検索
 <div id="apiMessage" class="message"></div>
 
 <label>ゲーム名</label>
-
 <input id="title" type="text">
 
 <label>ハード</label>
-
 <select id="hardware"></select>
 
 <label>所有</label>
-
 <select id="owned">
-
 <option>所有</option>
 <option>未所有</option>
 <option>購入予定</option>
-
 </select>
 
 <label>形式</label>
-
 <select id="format">
-
 <option>パッケージ</option>
 <option>ダウンロード</option>
 <option>その他</option>
-
 </select>
 
 <label>メーカー・販売店</label>
-
-<input
-  id="manufacturer"
-  type="text"
->
+<input id="manufacturer" type="text">
 
 <label>発売日</label>
-
-<input
-  id="releaseDate"
-  type="text"
->
+<input id="releaseDate" type="text">
 
 <label>メモ</label>
-
 <textarea id="memo"></textarea>
 
 <button onclick="registerGame()">
@@ -230,7 +156,6 @@ JANから楽天で検索
 </button>
 
 <div id="message" class="message"></div>
-
 
 <div class="box">
 
@@ -246,13 +171,9 @@ JANから楽天で検索
 ハードを追加
 </button>
 
-<div
-  id="hardwareMessage"
-  class="message"
-></div>
+<div id="hardwareMessage" class="message"></div>
 
 </div>
-
 
 <div class="box">
 
@@ -278,16 +199,13 @@ JANから楽天で検索
   id="filterOwned"
   onchange="filterGames()"
 >
-
 <option value="">すべて</option>
 <option>所有</option>
 <option>未所有</option>
 <option>購入予定</option>
-
 </select>
 
 </div>
-
 
 <h2>ゲーム一覧</h2>
 
@@ -295,20 +213,14 @@ JANから楽天で検索
 読み込み中...
 </div>
 
-
 <script>
 
 var allGames = [];
 var janPollingTimer = null;
 
-
-/*
- * カメラを開く
- */
 function openCamera() {
 
   google.script.run
-
     .withSuccessHandler(function(url) {
 
       window.open(
@@ -319,7 +231,6 @@ function openCamera() {
       startJanPolling();
 
     })
-
     .withFailureHandler(function(error) {
 
       document.getElementById("apiMessage").textContent =
@@ -331,57 +242,39 @@ function openCamera() {
         );
 
     })
-
     .getWebAppUrl();
 
 }
 
-
-/*
- * CameraからJANを受け取る
- */
 function startJanPolling() {
 
   if (janPollingTimer) {
-
     clearInterval(janPollingTimer);
-
   }
-
 
   janPollingTimer =
     setInterval(function() {
 
       google.script.run
-
         .withSuccessHandler(function(jan) {
 
           if (!jan) {
             return;
           }
 
-
-          document.getElementById("jan").value =
-            jan;
-
+          document.getElementById("jan").value = jan;
 
           document.getElementById("apiMessage").textContent =
             "📷 JANコードを読み取りました。";
 
-
-          google.script.run
-            .clearLatestJAN();
-
+          google.script.run.clearLatestJAN();
 
           clearInterval(janPollingTimer);
-
           janPollingTimer = null;
-
 
           searchRakuten();
 
         })
-
         .withFailureHandler(function(error) {
 
           console.error(
@@ -390,48 +283,31 @@ function startJanPolling() {
           );
 
         })
-
         .getLatestJAN();
 
     }, 1000);
 
 }
 
-
-/*
- * ゲーム管理画面を開いた時に
- * 既に保存されているJANを取得
- */
 function loadInitialJAN() {
 
   google.script.run
-
     .withSuccessHandler(function(jan) {
 
       if (!jan) {
         return;
       }
 
-
-      document.getElementById("jan").value =
-        jan;
-
+      document.getElementById("jan").value = jan;
 
       document.getElementById("apiMessage").textContent =
         "📷 JANコードを読み取りました。";
 
+      google.script.run.clearLatestJAN();
 
-      google.script.run
-        .clearLatestJAN();
-
-
-      /*
-       * JAN読み取り後、自動で楽天検索
-       */
       searchRakuten();
 
     })
-
     .withFailureHandler(function(error) {
 
       console.error(
@@ -440,15 +316,10 @@ function loadInitialJAN() {
       );
 
     })
-
     .getLatestJAN();
 
 }
 
-
-/*
- * 楽天検索
- */
 function searchRakuten() {
 
   var jan =
@@ -457,23 +328,18 @@ function searchRakuten() {
       .value
       .trim();
 
-
   if (jan === "") {
 
     document.getElementById("apiMessage").textContent =
       "JANコードを入力してください。";
 
     return;
-
   }
-
 
   document.getElementById("apiMessage").textContent =
     "楽天から検索中...";
 
-
   google.script.run
-
     .withSuccessHandler(function(result) {
 
       if (!result || !result.found) {
@@ -482,9 +348,7 @@ function searchRakuten() {
           "楽天で商品が見つかりませんでした。";
 
         return;
-
       }
-
 
       document.getElementById("title").value =
         result.title || "";
@@ -495,12 +359,10 @@ function searchRakuten() {
       document.getElementById("releaseDate").value =
         result.releaseDate || "";
 
-
       document.getElementById("apiMessage").textContent =
         "楽天から商品情報を取得しました。";
 
     })
-
     .withFailureHandler(function(error) {
 
       document.getElementById("apiMessage").textContent =
@@ -512,66 +374,39 @@ function searchRakuten() {
         );
 
     })
-
     .searchRakutenGame(jan);
 
 }
 
-
-/*
- * ゲーム登録
- */
 function registerGame() {
 
   var game = {
 
     jan:
-      document
-        .getElementById("jan")
-        .value
-        .trim(),
+      document.getElementById("jan").value.trim(),
 
     title:
-      document
-        .getElementById("title")
-        .value
-        .trim(),
+      document.getElementById("title").value.trim(),
 
     hardware:
-      document
-        .getElementById("hardware")
-        .value,
+      document.getElementById("hardware").value,
 
     owned:
-      document
-        .getElementById("owned")
-        .value,
+      document.getElementById("owned").value,
 
     format:
-      document
-        .getElementById("format")
-        .value,
+      document.getElementById("format").value,
 
     manufacturer:
-      document
-        .getElementById("manufacturer")
-        .value
-        .trim(),
+      document.getElementById("manufacturer").value.trim(),
 
     releaseDate:
-      document
-        .getElementById("releaseDate")
-        .value
-        .trim(),
+      document.getElementById("releaseDate").value.trim(),
 
     memo:
-      document
-        .getElementById("memo")
-        .value
-        .trim()
+      document.getElementById("memo").value.trim()
 
   };
-
 
   if (game.jan === "") {
 
@@ -579,9 +414,7 @@ function registerGame() {
       "JANコードを入力してください。";
 
     return;
-
   }
-
 
   if (game.title === "") {
 
@@ -589,12 +422,9 @@ function registerGame() {
       "ゲーム名を入力してください。";
 
     return;
-
   }
 
-
   google.script.run
-
     .withSuccessHandler(function(result) {
 
       if (result === "DUPLICATE") {
@@ -603,13 +433,10 @@ function registerGame() {
           "このJANコードはすでに登録されています。";
 
         return;
-
       }
-
 
       document.getElementById("message").textContent =
         "登録しました。";
-
 
       document.getElementById("jan").value = "";
       document.getElementById("title").value = "";
@@ -618,11 +445,9 @@ function registerGame() {
       document.getElementById("memo").value = "";
       document.getElementById("apiMessage").textContent = "";
 
-
       loadGames();
 
     })
-
     .withFailureHandler(function(error) {
 
       document.getElementById("message").textContent =
@@ -634,19 +459,13 @@ function registerGame() {
         );
 
     })
-
     .addGameIfNotDuplicate(game);
 
 }
 
-
-/*
- * ハード一覧
- */
 function loadHardwares() {
 
   google.script.run
-
     .withSuccessHandler(function(list) {
 
       var register =
@@ -655,12 +474,10 @@ function loadHardwares() {
       var filter =
         document.getElementById("filterHardware");
 
-
       register.innerHTML = "";
 
       filter.innerHTML =
         '<option value="">すべて</option>';
-
 
       list.forEach(function(name) {
 
@@ -671,12 +488,10 @@ function loadHardwares() {
 
         register.appendChild(option1);
 
-
         var option2 =
           document.createElement("option");
 
         option2.textContent = name;
-
         option2.value = name;
 
         filter.appendChild(option2);
@@ -684,7 +499,6 @@ function loadHardwares() {
       });
 
     })
-
     .withFailureHandler(function(error) {
 
       document.getElementById("hardwareMessage").textContent =
@@ -696,15 +510,10 @@ function loadHardwares() {
         );
 
     })
-
     .getHardwares();
 
 }
 
-
-/*
- * ハード追加
- */
 function addHardware() {
 
   var name =
@@ -713,19 +522,15 @@ function addHardware() {
       .value
       .trim();
 
-
   if (name === "") {
 
     document.getElementById("hardwareMessage").textContent =
       "ハード名を入力してください。";
 
     return;
-
   }
 
-
   google.script.run
-
     .withSuccessHandler(function(result) {
 
       if (result === "DUPLICATE") {
@@ -734,21 +539,16 @@ function addHardware() {
           "そのハードはすでに登録されています。";
 
         return;
-
       }
-
 
       document.getElementById("hardwareMessage").textContent =
         "ハードを追加しました。";
 
-
       document.getElementById("newHardware").value = "";
-
 
       loadHardwares();
 
     })
-
     .withFailureHandler(function(error) {
 
       document.getElementById("hardwareMessage").textContent =
@@ -760,23 +560,16 @@ function addHardware() {
         );
 
     })
-
     .addHardware(name);
 
 }
 
-
-/*
- * ゲーム一覧
- */
 function loadGames() {
 
   document.getElementById("gameList").textContent =
     "読み込み中...";
 
-
   google.script.run
-
     .withSuccessHandler(function(games) {
 
       allGames =
@@ -784,11 +577,9 @@ function loadGames() {
           ? games
           : [];
 
-
       filterGames();
 
     })
-
     .withFailureHandler(function(error) {
 
       document.getElementById("gameList").textContent =
@@ -800,15 +591,10 @@ function loadGames() {
         );
 
     })
-
     .getGames();
 
 }
 
-
-/*
- * ゲーム検索
- */
 function filterGames() {
 
   var keyword =
@@ -817,18 +603,11 @@ function filterGames() {
       .value
       .toLowerCase();
 
-
   var hardware =
-    document
-      .getElementById("filterHardware")
-      .value;
-
+    document.getElementById("filterHardware").value;
 
   var owned =
-    document
-      .getElementById("filterOwned")
-      .value;
-
+    document.getElementById("filterOwned").value;
 
   var result =
     allGames.filter(function(game) {
@@ -845,22 +624,18 @@ function filterGames() {
         String(game.manufacturer || "")
           .toLowerCase();
 
-
       var keywordMatch =
         jan.indexOf(keyword) !== -1 ||
         title.indexOf(keyword) !== -1 ||
         manufacturer.indexOf(keyword) !== -1;
 
-
       var hardwareMatch =
         hardware === "" ||
         game.hardware === hardware;
 
-
       var ownedMatch =
         owned === "" ||
         game.owned === owned;
-
 
       return (
         keywordMatch &&
@@ -869,7 +644,6 @@ function filterGames() {
       );
 
     });
-
 
   result.sort(function(a, b) {
 
@@ -889,15 +663,10 @@ function filterGames() {
 
   });
 
-
   showGames(result);
 
 }
 
-
-/*
- * ゲーム一覧表示
- */
 function showGames(games) {
 
   if (!games || games.length === 0) {
@@ -906,17 +675,13 @@ function showGames(games) {
       "登録されているゲームはありません。";
 
     return;
-
   }
-
 
   var table =
     document.createElement("table");
 
-
   var header =
     document.createElement("tr");
-
 
   var headers = [
     "JAN",
@@ -927,7 +692,6 @@ function showGames(games) {
     "メーカー",
     "操作"
   ];
-
 
   headers.forEach(function(name) {
 
@@ -940,30 +704,24 @@ function showGames(games) {
 
   });
 
-
   table.appendChild(header);
-
 
   games.forEach(function(game) {
 
     var tr =
       document.createElement("tr");
 
-
     addCell(tr, game.jan);
     addCellStrong(tr, game.title);
     addCell(tr, game.hardware);
 
-
     var ownedCell =
       document.createElement("td");
-
 
     var select =
       document.createElement("select");
 
     select.className = "status";
-
 
     [
       "所有",
@@ -985,7 +743,6 @@ function showGames(games) {
 
     });
 
-
     select.onchange = function() {
 
       changeOwned(
@@ -995,19 +752,15 @@ function showGames(games) {
 
     };
 
-
     ownedCell.appendChild(select);
 
     tr.appendChild(ownedCell);
 
-
     addCell(tr, game.format);
     addCell(tr, game.manufacturer);
 
-
     var actionCell =
       document.createElement("td");
-
 
     var editButton =
       document.createElement("button");
@@ -1015,13 +768,11 @@ function showGames(games) {
     editButton.textContent = "編集";
     editButton.className = "action";
 
-
     editButton.onclick = function() {
 
       editGame(game.jan);
 
     };
-
 
     var deleteButton =
       document.createElement("button");
@@ -1029,39 +780,29 @@ function showGames(games) {
     deleteButton.textContent = "削除";
     deleteButton.className = "action";
 
-
     deleteButton.onclick = function() {
 
       deleteGame(game.jan);
 
     };
 
-
     actionCell.appendChild(editButton);
     actionCell.appendChild(deleteButton);
 
     tr.appendChild(actionCell);
 
-
     table.appendChild(tr);
 
   });
 
-
   var container =
     document.getElementById("gameList");
 
-
   container.innerHTML = "";
-
   container.appendChild(table);
 
 }
 
-
-/*
- * セル
- */
 function addCell(row, value) {
 
   var td =
@@ -1074,10 +815,6 @@ function addCell(row, value) {
 
 }
 
-
-/*
- * 太字セル
- */
 function addCellStrong(row, value) {
 
   var td =
@@ -1095,20 +832,14 @@ function addCellStrong(row, value) {
 
 }
 
-
-/*
- * 所有状況変更
- */
 function changeOwned(jan, value) {
 
   google.script.run
-
     .withSuccessHandler(function() {
 
       loadGames();
 
     })
-
     .withFailureHandler(function(error) {
 
       alert(
@@ -1121,15 +852,10 @@ function changeOwned(jan, value) {
       );
 
     })
-
     .updateOwned(jan, value);
 
 }
 
-
-/*
- * 編集
- */
 function editGame(jan) {
 
   var game =
@@ -1140,7 +866,6 @@ function editGame(jan) {
 
     });
 
-
   if (!game) {
 
     alert("ゲームが見つかりません。");
@@ -1149,18 +874,15 @@ function editGame(jan) {
 
   }
 
-
   var title =
     prompt("ゲーム名", game.title);
 
   if (title === null) return;
 
-
   var hardware =
     prompt("ハード", game.hardware);
 
   if (hardware === null) return;
-
 
   var owned =
     prompt(
@@ -1170,12 +892,10 @@ function editGame(jan) {
 
   if (owned === null) return;
 
-
   var format =
     prompt("形式", game.format);
 
   if (format === null) return;
-
 
   var manufacturer =
     prompt(
@@ -1185,7 +905,6 @@ function editGame(jan) {
 
   if (manufacturer === null) return;
 
-
   var releaseDate =
     prompt(
       "発売日",
@@ -1194,15 +913,12 @@ function editGame(jan) {
 
   if (releaseDate === null) return;
 
-
   var memo =
     prompt("メモ", game.memo);
 
   if (memo === null) return;
 
-
   google.script.run
-
     .withSuccessHandler(function(result) {
 
       if (result === "UPDATED") {
@@ -1216,7 +932,6 @@ function editGame(jan) {
       }
 
     })
-
     .withFailureHandler(function(error) {
 
       alert(
@@ -1229,7 +944,6 @@ function editGame(jan) {
       );
 
     })
-
     .updateGame({
 
       jan: jan,
@@ -1245,10 +959,6 @@ function editGame(jan) {
 
 }
 
-
-/*
- * 削除
- */
 function deleteGame(jan) {
 
   var game =
@@ -1259,9 +969,7 @@ function deleteGame(jan) {
 
     });
 
-
   if (!game) return;
-
 
   if (
     !confirm(
@@ -1275,9 +983,7 @@ function deleteGame(jan) {
 
   }
 
-
   google.script.run
-
     .withSuccessHandler(function(result) {
 
       if (result === "DELETED") {
@@ -1291,7 +997,6 @@ function deleteGame(jan) {
       }
 
     })
-
     .withFailureHandler(function(error) {
 
       alert(
@@ -1304,19 +1009,12 @@ function deleteGame(jan) {
       );
 
     })
-
     .deleteGame(jan);
 
 }
 
-
-/*
- * 初期読み込み
- */
 loadHardwares();
-
 loadGames();
-
 loadInitialJAN();
 
 </script>
@@ -1326,10 +1024,6 @@ loadInitialJAN();
 `);
 }
 
-
-/*
- * WebアプリURL取得
- */
 function getWebAppUrl() {
 
   return ScriptApp
@@ -1338,90 +1032,63 @@ function getWebAppUrl() {
 
 }
 
-
-/*
- * CameraからJANを受け取る
- */
 function receiveJAN(jan) {
 
   if (!jan) {
-
     return "EMPTY";
-
   }
-
 
   jan =
     String(jan)
       .replace(/\D/g, "");
 
-
   if (!/^\d{13}$/.test(jan)) {
-
     return "INVALID";
-
   }
 
-
   PropertiesService
-    .getUserProperties()
+    .getScriptProperties()
     .setProperty(
       "LATEST_JAN",
       jan
     );
 
-
   return "RECEIVED";
 
 }
 
-
-/*
- * 最新JAN取得
- */
 function getLatestJAN() {
 
   return PropertiesService
-    .getUserProperties()
+    .getScriptProperties()
     .getProperty(
       "LATEST_JAN"
     ) || "";
 
 }
 
-
-/*
- * 最新JAN削除
- */
 function clearLatestJAN() {
 
   PropertiesService
-    .getUserProperties()
+    .getScriptProperties()
     .deleteProperty(
       "LATEST_JAN"
     );
-
 
   return "CLEARED";
 
 }
 
-
-/*
- * ハード一覧
- */
 function getHardwares() {
 
   var props =
     PropertiesService
       .getScriptProperties();
 
-
   var saved =
     props.getProperty(
       "HARDWARE_LIST"
     );
-
 
   if (saved) {
 
@@ -1429,9 +1096,7 @@ function getHardwares() {
 
   }
 
-
   var initial = [
-
     "PS1",
     "PS2",
     "PS3",
@@ -1439,29 +1104,21 @@ function getHardwares() {
     "PS5",
     "Switch",
     "Nintendo DS"
-
   ];
-
 
   props.setProperty(
     "HARDWARE_LIST",
     JSON.stringify(initial)
   );
 
-
   return initial;
 
 }
 
-
-/*
- * ハード追加
- */
 function addHardware(name) {
 
   var list =
     getHardwares();
-
 
   if (list.indexOf(name) !== -1) {
 
@@ -1469,9 +1126,7 @@ function addHardware(name) {
 
   }
 
-
   list.push(name);
-
 
   PropertiesService
     .getScriptProperties()
@@ -1480,22 +1135,16 @@ function addHardware(name) {
       JSON.stringify(list)
     );
 
-
   return "ADDED";
 
 }
 
-
-/*
- * ゲーム登録
- */
 function addGameIfNotDuplicate(game) {
 
   var sheet =
     SpreadsheetApp
       .getActiveSpreadsheet()
       .getSheetByName("シート1");
-
 
   if (!sheet) {
 
@@ -1505,12 +1154,10 @@ function addGameIfNotDuplicate(game) {
 
   }
 
-
   var data =
     sheet
       .getDataRange()
       .getValues();
-
 
   for (
     var i = 1;
@@ -1529,9 +1176,7 @@ function addGameIfNotDuplicate(game) {
 
   }
 
-
   sheet.appendRow([
-
     game.jan,
     game.title,
     game.hardware,
@@ -1542,25 +1187,18 @@ function addGameIfNotDuplicate(game) {
     "",
     game.memo,
     new Date()
-
   ]);
-
 
   return "ADDED";
 
 }
 
-
-/*
- * ゲーム一覧
- */
 function getGames() {
 
   var sheet =
     SpreadsheetApp
       .getActiveSpreadsheet()
       .getSheetByName("シート1");
-
 
   if (!sheet) {
 
@@ -1570,17 +1208,14 @@ function getGames() {
 
   }
 
-
   var lastRow =
     sheet.getLastRow();
-
 
   if (lastRow <= 1) {
 
     return [];
 
   }
-
 
   var data =
     sheet
@@ -1591,7 +1226,6 @@ function getGames() {
         10
       )
       .getValues();
-
 
   return data.map(function(row) {
 
@@ -1627,10 +1261,6 @@ function getGames() {
 
 }
 
-
-/*
- * 所有状況更新
- */
 function updateOwned(jan, value) {
 
   var sheet =
@@ -1638,12 +1268,10 @@ function updateOwned(jan, value) {
       .getActiveSpreadsheet()
       .getSheetByName("シート1");
 
-
   var data =
     sheet
       .getDataRange()
       .getValues();
-
 
   for (
     var i = 1;
@@ -1663,22 +1291,16 @@ function updateOwned(jan, value) {
         )
         .setValue(value);
 
-
       return "UPDATED";
 
     }
 
   }
 
-
   return "NOT_FOUND";
 
 }
 
-
-/*
- * ゲーム更新
- */
 function updateGame(game) {
 
   var sheet =
@@ -1686,12 +1308,10 @@ function updateGame(game) {
       .getActiveSpreadsheet()
       .getSheetByName("シート1");
 
-
   var data =
     sheet
       .getDataRange()
       .getValues();
-
 
   for (
     var i = 1;
@@ -1720,7 +1340,6 @@ function updateGame(game) {
           game.releaseDate
         ]]);
 
-
       sheet
         .getRange(
           i + 1,
@@ -1730,22 +1349,16 @@ function updateGame(game) {
           game.memo
         );
 
-
       return "UPDATED";
 
     }
 
   }
 
-
   return "NOT_FOUND";
 
 }
 
-
-/*
- * ゲーム削除
- */
 function deleteGame(jan) {
 
   var sheet =
@@ -1753,12 +1366,10 @@ function deleteGame(jan) {
       .getActiveSpreadsheet()
       .getSheetByName("シート1");
 
-
   var data =
     sheet
       .getDataRange()
       .getValues();
-
 
   for (
     var i = 1;
@@ -1775,40 +1386,31 @@ function deleteGame(jan) {
         i + 1
       );
 
-
       return "DELETED";
 
     }
 
   }
 
-
   return "NOT_FOUND";
 
 }
 
-
-/*
- * 楽天API検索
- */
 function searchRakutenGame(keyword) {
 
   var props =
     PropertiesService
       .getScriptProperties();
 
-
   var appId =
     props.getProperty(
       "RAKUTEN_APP_ID"
     );
 
-
   var accessKey =
     props.getProperty(
       "RAKUTEN_ACCESS_KEY"
     );
-
 
   if (!appId || !accessKey) {
 
@@ -1817,7 +1419,6 @@ function searchRakutenGame(keyword) {
     );
 
   }
-
 
   var url =
     "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701" +
@@ -1831,7 +1432,6 @@ function searchRakutenGame(keyword) {
     encodeURIComponent(accessKey) +
     "&hits=1";
 
-
   var response =
     UrlFetchApp.fetch(
       url,
@@ -1841,14 +1441,11 @@ function searchRakutenGame(keyword) {
       }
     );
 
-
   var status =
     response.getResponseCode();
 
-
   var text =
     response.getContentText();
-
 
   if (status !== 200) {
 
@@ -1861,10 +1458,8 @@ function searchRakutenGame(keyword) {
 
   }
 
-
   var json =
     JSON.parse(text);
-
 
   if (
     !json.Items ||
@@ -1877,10 +1472,8 @@ function searchRakutenGame(keyword) {
 
   }
 
-
   var item =
     json.Items[0];
-
 
   if (
     !item ||
@@ -1892,7 +1485,6 @@ function searchRakutenGame(keyword) {
     };
 
   }
-
 
   return {
 
