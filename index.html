@@ -1,3 +1,5 @@
+# GitHub INDEX 完成版
+
 ```html
 <!DOCTYPE html>
 <html lang="ja">
@@ -47,6 +49,10 @@ h2 {
   font-weight: bold;
 }
 
+.copyButton {
+  background: #6689a5;
+}
+
 .closeButton {
   background: #555;
   font-size: 15px;
@@ -64,6 +70,20 @@ h2 {
 
 #cameraInput {
   display: none;
+}
+
+#result {
+  display: none;
+  margin: 20px auto;
+  padding: 15px;
+  max-width: 500px;
+  background: #222;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 </style>
@@ -96,6 +116,17 @@ h2 {
   id="preview"
 >
 
+<div id="result"></div>
+
+<button
+  id="copyButton"
+  class="scanButton copyButton"
+  style="display:none;"
+  onclick="copyJAN()"
+>
+📋 JANをコピー
+</button>
+
 <button
   class="scanButton closeButton"
   onclick="closeCamera()"
@@ -117,12 +148,14 @@ const message =
 const preview =
   document.getElementById("preview");
 
+const resultBox =
+  document.getElementById("result");
 
-/*
- * Apps Script URL
- */
-const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
+const copyButton =
+  document.getElementById("copyButton");
+
+
+let currentJAN = "";
 
 
 /*
@@ -201,36 +234,29 @@ input.addEventListener(
 
         if (jan.length === 13) {
 
+          currentJAN = jan;
+
+
+          /*
+           * JANを画面に表示
+           */
+          resultBox.textContent =
+            jan;
+
+          resultBox.style.display =
+            "block";
+
+
+          /*
+           * コピー可能にする
+           */
+          copyButton.style.display =
+            "block";
+
+
           message.textContent =
             "JANを読み取りました。";
 
-
-          /*
-           * Apps ScriptへJANを送信
-           */
-          fetch(
-            APPS_SCRIPT_URL +
-            "?action=receiveJAN&jan=" +
-            encodeURIComponent(jan),
-            {
-              method: "GET",
-              mode: "no-cors"
-            }
-          );
-
-
-          /*
-           * ゲーム管理画面へ戻る
-           */
-          setTimeout(
-            function() {
-
-              window.location.href =
-                APPS_SCRIPT_URL;
-
-            },
-            1000
-          );
 
           return;
 
@@ -258,6 +284,66 @@ input.addEventListener(
 
   }
 );
+
+
+/*
+ * JANコピー
+ */
+async function copyJAN() {
+
+  if (!currentJAN) {
+
+    message.textContent =
+      "コピーするJANコードがありません。";
+
+    return;
+
+  }
+
+
+  try {
+
+    await navigator.clipboard.writeText(
+      currentJAN
+    );
+
+
+    message.textContent =
+      "JANコードをコピーしました。ゲーム管理画面のJAN欄に貼り付けてください。";
+
+
+  } catch (error) {
+
+    /*
+     * Clipboard APIが使えない場合の予備処理
+     */
+    const textarea =
+      document.createElement("textarea");
+
+    textarea.value =
+      currentJAN;
+
+    document.body.appendChild(
+      textarea
+    );
+
+    textarea.select();
+
+    document.execCommand(
+      "copy"
+    );
+
+    document.body.removeChild(
+      textarea
+    );
+
+
+    message.textContent =
+      "JANコードをコピーしました。ゲーム管理画面のJAN欄に貼り付けてください。";
+
+  }
+
+}
 
 
 /*
