@@ -1,156 +1,112 @@
-function doGet(e) {
-
-  /*
-   * CameraからJANを受け取った場合
-   */
-  if (
-    e &&
-    e.parameter &&
-    e.parameter.jan
-  ) {
-
-    receiveJAN(
-      e.parameter.jan
-    );
-
-    return HtmlService
-      .createHtmlOutput(
-        "<script>window.close();</script>"
-      );
-
-  }
-
-
-  /*
-   * Camera画面
-   */
-  if (
-    e &&
-    e.parameter &&
-    e.parameter.camera === "1"
-  ) {
-
-    return HtmlService
-      .createHtmlOutputFromFile("Camera");
-
-  }
-
-
-  /*
-   * ゲーム管理画面
-   */
-  return HtmlService.createHtmlOutput(`
+```html
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
 
-<title>ゲーム管理</title>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<title>JANコード読み取り</title>
 
 <style>
 
+html,
 body {
-  font-family: sans-serif;
   margin: 0;
-  padding: 15px;
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-h1 {
-  margin-top: 10px;
-}
-
-input,
-select,
-textarea,
-button {
-  box-sizing: border-box;
+  padding: 0;
   width: 100%;
-  padding: 10px;
-  margin-top: 6px;
+  min-height: 100%;
+  background: #111;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  text-align: center;
+}
+
+h2 {
+  margin: 18px 10px 10px;
+}
+
+#message {
+  min-height: 45px;
+  padding: 0 15px;
   font-size: 16px;
+  line-height: 1.5;
+}
+
+#cameraArea {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 15px auto 0;
+  background: #000;
+  overflow: hidden;
+}
+
+#video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+
+#scanFrame {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 35%;
+  height: 30%;
+  border: 3px solid #00ff66;
+  border-radius: 8px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
+}
+
+#scanLabel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 2px 4px #000;
 }
 
 button {
-  cursor: pointer;
-}
-
-label {
   display: block;
-  margin-top: 12px;
-  font-weight: bold;
-}
-
-.box {
-  border: 1px solid #ccc;
+  width: calc(100% - 30px);
+  max-width: 700px;
+  margin: 18px auto;
   padding: 15px;
-  margin-top: 25px;
-}
-
-.message {
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-.cameraButton {
+  border: 0;
+  border-radius: 10px;
   background: #6689a5;
-  color: white;
+  color: #fff;
+  font-size: 17px;
   font-weight: bold;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
+#stopButton {
+  background: #555;
 }
 
-th,
-td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  vertical-align: middle;
+#result {
+  margin: 20px 15px;
+  padding: 15px;
+  background: #222;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: bold;
 }
 
-th {
-  background: #f3f3f3;
-}
-
-.status {
-  width: auto;
-  padding: 6px;
-  margin: 0;
-}
-
-.action {
-  width: auto;
-  padding: 6px 10px;
-  margin: 2px;
-  font-size: 14px;
-}
-
-@media (max-width: 700px) {
-
-  body {
-    padding: 10px;
-  }
-
-  table {
-    font-size: 13px;
-  }
-
-  th,
-  td {
-    padding: 5px;
-  }
-
-  .action {
-    display: block;
-    width: 100%;
-  }
-
+.hidden {
+  display: none;
 }
 
 </style>
@@ -159,1588 +115,336 @@ th {
 
 <body>
 
-<h1>ゲーム管理</h1>
+<h2>📷 JANコード読み取り</h2>
 
-<h2>ゲーム登録</h2>
-
-<label>JAN</label>
-
-<input
-  id="jan"
-  type="text"
-  inputmode="numeric"
->
+<div id="message">
+「カメラを起動」を押してください。
+</div>
 
 <button
-  class="cameraButton"
-  onclick="openCamera()"
+  id="startButton"
+  onclick="startScanner()"
 >
-📷 カメラでJANを読み取る
-</button>
-
-<button onclick="searchRakuten()">
-JANから楽天で検索
-</button>
-
-<div id="apiMessage" class="message"></div>
-
-<label>ゲーム名</label>
-
-<input id="title" type="text">
-
-<label>ハード</label>
-
-<select id="hardware"></select>
-
-<label>所有</label>
-
-<select id="owned">
-
-<option>所有</option>
-<option>未所有</option>
-<option>購入予定</option>
-
-</select>
-
-<label>形式</label>
-
-<select id="format">
-
-<option>パッケージ</option>
-<option>ダウンロード</option>
-<option>その他</option>
-
-</select>
-
-<label>メーカー・販売店</label>
-
-<input
-  id="manufacturer"
-  type="text"
->
-
-<label>発売日</label>
-
-<input
-  id="releaseDate"
-  type="text"
->
-
-<label>メモ</label>
-
-<textarea id="memo"></textarea>
-
-<button onclick="registerGame()">
-ゲームを登録
-</button>
-
-<div id="message" class="message"></div>
-
-<div class="box">
-
-<h2>ハード追加</h2>
-
-<input
-  id="newHardware"
-  type="text"
-  placeholder="例：PS6"
->
-
-<button onclick="addHardware()">
-ハードを追加
+📷 カメラを起動
 </button>
 
 <div
-  id="hardwareMessage"
-  class="message"
+  id="cameraArea"
+  class="hidden"
+>
+
+  <video
+    id="video"
+    autoplay
+    muted
+    playsinline
+  ></video>
+
+  <div id="scanFrame"></div>
+
+  <div id="scanLabel">
+    JANコードを緑の枠に合わせてください
+  </div>
+
+</div>
+
+<button
+  id="stopButton"
+  class="hidden"
+  onclick="stopScanner()"
+>
+カメラを停止
+</button>
+
+<div
+  id="result"
+  class="hidden"
 ></div>
 
-</div>
 
-<div class="box">
+<script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
 
-<h2>ゲーム検索</h2>
-
-<input
-  id="search"
-  type="text"
-  placeholder="ゲーム名・JAN・メーカーで検索"
-  oninput="filterGames()"
->
-
-<label>ハード</label>
-
-<select
-  id="filterHardware"
-  onchange="filterGames()"
-></select>
-
-<label>所有状況</label>
-
-<select
-  id="filterOwned"
-  onchange="filterGames()"
->
-
-<option value="">すべて</option>
-<option>所有</option>
-<option>未所有</option>
-<option>購入予定</option>
-
-</select>
-
-</div>
-
-<h2>ゲーム一覧</h2>
-
-<div id="gameList">
-読み込み中...
-</div>
 
 <script>
 
-var allGames = [];
-var janPollingTimer = null;
+let codeReader = null;
+let controls = null;
+let scanning = false;
 
 
 /*
- * Cameraを開く
+ * Apps Script WebアプリURL
  */
-function openCamera() {
-
-  google.script.run
-
-    .withSuccessHandler(function(url) {
-
-      window.open(
-        url + "?camera=1",
-        "_blank"
-      );
-
-      startJanPolling();
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      document.getElementById("apiMessage").textContent =
-        "カメラ起動エラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        );
-
-    })
-
-    .getWebAppUrl();
-
-}
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
 
 
 /*
- * Cameraから届いたJANを監視
+ * カメラ開始
  */
-function startJanPolling() {
+async function startScanner() {
 
-  if (janPollingTimer) {
+  const message =
+    document.getElementById("message");
 
-    clearInterval(
-      janPollingTimer
-    );
+  const cameraArea =
+    document.getElementById("cameraArea");
+
+  const startButton =
+    document.getElementById("startButton");
+
+  const stopButton =
+    document.getElementById("stopButton");
+
+  const resultBox =
+    document.getElementById("result");
+
+  const video =
+    document.getElementById("video");
+
+
+  resultBox.classList.add("hidden");
+
+  startButton.classList.add("hidden");
+
+  stopButton.classList.remove("hidden");
+
+  cameraArea.classList.remove("hidden");
+
+
+  if (!window.ZXingBrowser) {
+
+    message.textContent =
+      "JAN読み取り機能の読み込みに失敗しました。";
+
+    return;
 
   }
 
-  janPollingTimer =
-    setInterval(function() {
 
-      google.script.run
+  try {
 
-        .withSuccessHandler(function(jan) {
+    message.textContent =
+      "カメラを起動しています…";
 
-          if (!jan) {
+
+    codeReader =
+      new ZXingBrowser.BrowserMultiFormatReader();
+
+
+    scanning = true;
+
+
+    controls =
+      await codeReader.decodeFromVideoDevice(
+
+        undefined,
+
+        video,
+
+        function(result, error) {
+
+          if (!scanning) {
             return;
           }
 
-          var janInput =
-            document.getElementById("jan");
 
-          janInput.value =
-            String(jan);
+          if (
+            result &&
+            result.text
+          ) {
 
-          document.getElementById("apiMessage").textContent =
-            "📷 JANコードを読み取りました。";
+            const raw =
+              String(result.text);
 
-          google.script.run
-            .clearLatestJAN();
 
-          clearInterval(
-            janPollingTimer
-          );
+            const jan =
+              raw.replace(/\D/g, "");
 
-          janPollingTimer = null;
 
-          searchRakuten();
+            if (
+              /^\d{13}$/.test(jan)
+            ) {
 
-        })
+              scanning = false;
 
-        .withFailureHandler(function(error) {
 
-          console.error(
-            "JAN取得エラー",
-            error
-          );
+              resultBox.textContent =
+                "読み取り成功： " + jan;
 
-        })
 
-        .getLatestJAN();
+              resultBox.classList.remove(
+                "hidden"
+              );
 
-    }, 500);
+
+              message.textContent =
+                "JANコードを読み取りました。";
+
+
+              if (controls) {
+
+                controls.stop();
+
+                controls = null;
+
+              }
+
+
+              if (codeReader) {
+
+                try {
+
+                  codeReader.reset();
+
+                } catch (e) {}
+
+              }
+
+
+              /*
+               * Apps Scriptのcamera.htmlへ
+               * JANを渡す
+               */
+              const cameraURL =
+                APPS_SCRIPT_URL +
+                "?camera=1&jan=" +
+                encodeURIComponent(jan);
+
+
+              setTimeout(
+                function() {
+
+                  window.location.href =
+                    cameraURL;
+
+                },
+                500
+              );
+
+            }
+
+          }
+
+        }
+
+      );
+
+
+    message.textContent =
+      "JANコードを緑の枠に合わせてください。";
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    scanning = false;
+
+
+    message.textContent =
+      "カメラ起動エラー：" +
+      (
+        error && error.message
+          ? error.message
+          : error
+      );
+
+
+    startButton.classList.remove(
+      "hidden"
+    );
+
+    stopButton.classList.add(
+      "hidden"
+    );
+
+  }
 
 }
 
 
 /*
- * 楽天検索
+ * カメラ停止
  */
-function searchRakuten() {
+function stopScanner() {
 
-  var jan =
-    document
-      .getElementById("jan")
-      .value
-      .trim();
-
-  if (jan === "") {
-
-    document.getElementById("apiMessage").textContent =
-      "JANコードを入力してください。";
-
-    return;
-
-  }
-
-  document.getElementById("apiMessage").textContent =
-    "楽天から検索中...";
-
-  google.script.run
-
-    .withSuccessHandler(function(result) {
-
-      if (!result || !result.found) {
-
-        document.getElementById("apiMessage").textContent =
-          "楽天で商品が見つかりませんでした。";
-
-        return;
-
-      }
-
-      document.getElementById("title").value =
-        result.title || "";
-
-      document.getElementById("manufacturer").value =
-        result.manufacturer || "";
-
-      document.getElementById("releaseDate").value =
-        result.releaseDate || "";
-
-      document.getElementById("apiMessage").textContent =
-        "楽天から商品情報を取得しました。";
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      document.getElementById("apiMessage").textContent =
-        "楽天APIエラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        );
-
-    })
-
-    .searchRakutenGame(jan);
-
-}
+  scanning = false;
 
 
-/*
- * ゲーム登録
- */
-function registerGame() {
+  if (controls) {
 
-  var game = {
+    try {
 
-    jan:
-      document
-        .getElementById("jan")
-        .value
-        .trim(),
+      controls.stop();
 
-    title:
-      document
-        .getElementById("title")
-        .value
-        .trim(),
+    } catch (e) {}
 
-    hardware:
-      document
-        .getElementById("hardware")
-        .value,
-
-    owned:
-      document
-        .getElementById("owned")
-        .value,
-
-    format:
-      document
-        .getElementById("format")
-        .value,
-
-    manufacturer:
-      document
-        .getElementById("manufacturer")
-        .value
-        .trim(),
-
-    releaseDate:
-      document
-        .getElementById("releaseDate")
-        .value
-        .trim(),
-
-    memo:
-      document
-        .getElementById("memo")
-        .value
-        .trim()
-
-  };
-
-
-  if (game.jan === "") {
-
-    document.getElementById("message").textContent =
-      "JANコードを入力してください。";
-
-    return;
+    controls = null;
 
   }
 
 
-  if (game.title === "") {
+  if (codeReader) {
 
-    document.getElementById("message").textContent =
-      "ゲーム名を入力してください。";
+    try {
 
-    return;
+      codeReader.reset();
+
+    } catch (e) {}
+
+    codeReader = null;
 
   }
 
 
-  google.script.run
-
-    .withSuccessHandler(function(result) {
-
-      if (result === "DUPLICATE") {
-
-        document.getElementById("message").textContent =
-          "このJANコードはすでに登録されています。";
-
-        return;
-
-      }
-
-      document.getElementById("message").textContent =
-        "登録しました。";
-
-      document.getElementById("jan").value = "";
-      document.getElementById("title").value = "";
-      document.getElementById("manufacturer").value = "";
-      document.getElementById("releaseDate").value = "";
-      document.getElementById("memo").value = "";
-      document.getElementById("apiMessage").textContent = "";
-
-      loadGames();
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      document.getElementById("message").textContent =
-        "登録エラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        );
-
-    })
-
-    .addGameIfNotDuplicate(game);
-
-}
+  const video =
+    document.getElementById("video");
 
 
-/*
- * ハード一覧
- */
-function loadHardwares() {
+  if (
+    video &&
+    video.srcObject
+  ) {
 
-  google.script.run
+    video.srcObject
+      .getTracks()
+      .forEach(function(track) {
 
-    .withSuccessHandler(function(list) {
-
-      var register =
-        document.getElementById("hardware");
-
-      var filter =
-        document.getElementById("filterHardware");
-
-      register.innerHTML = "";
-
-      filter.innerHTML =
-        '<option value="">すべて</option>';
-
-      list.forEach(function(name) {
-
-        var option1 =
-          document.createElement("option");
-
-        option1.textContent = name;
-
-        register.appendChild(option1);
-
-        var option2 =
-          document.createElement("option");
-
-        option2.textContent = name;
-        option2.value = name;
-
-        filter.appendChild(option2);
+        track.stop();
 
       });
 
-    })
-
-    .withFailureHandler(function(error) {
-
-      document.getElementById("hardwareMessage").textContent =
-        "ハード読み込みエラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        );
-
-    })
-
-    .getHardwares();
-
-}
-
-
-/*
- * ハード追加
- */
-function addHardware() {
-
-  var name =
-    document
-      .getElementById("newHardware")
-      .value
-      .trim();
-
-  if (name === "") {
-
-    document.getElementById("hardwareMessage").textContent =
-      "ハード名を入力してください。";
-
-    return;
+    video.srcObject = null;
 
   }
 
-  google.script.run
 
-    .withSuccessHandler(function(result) {
+  document
+    .getElementById("cameraArea")
+    .classList.add("hidden");
 
-      if (result === "DUPLICATE") {
 
-        document.getElementById("hardwareMessage").textContent =
-          "そのハードはすでに登録されています。";
+  document
+    .getElementById("stopButton")
+    .classList.add("hidden");
 
-        return;
 
-      }
+  document
+    .getElementById("startButton")
+    .classList.remove("hidden");
 
-      document.getElementById("hardwareMessage").textContent =
-        "ハードを追加しました。";
 
-      document.getElementById("newHardware").value = "";
-
-      loadHardwares();
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      document.getElementById("hardwareMessage").textContent =
-        "エラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        );
-
-    })
-
-    .addHardware(name);
+  document
+    .getElementById("message")
+    .textContent =
+      "「カメラを起動」を押してください。";
 
 }
-
-
-/*
- * ゲーム一覧
- */
-function loadGames() {
-
-  document.getElementById("gameList").textContent =
-    "読み込み中...";
-
-  google.script.run
-
-    .withSuccessHandler(function(games) {
-
-      allGames =
-        Array.isArray(games)
-          ? games
-          : [];
-
-      filterGames();
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      document.getElementById("gameList").textContent =
-        "ゲーム一覧の読み込みエラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        );
-
-    })
-
-    .getGames();
-
-}
-
-
-/*
- * ゲーム検索
- */
-function filterGames() {
-
-  var keyword =
-    document
-      .getElementById("search")
-      .value
-      .toLowerCase();
-
-  var hardware =
-    document
-      .getElementById("filterHardware")
-      .value;
-
-  var owned =
-    document
-      .getElementById("filterOwned")
-      .value;
-
-  var result =
-    allGames.filter(function(game) {
-
-      var jan =
-        String(game.jan || "")
-          .toLowerCase();
-
-      var title =
-        String(game.title || "")
-          .toLowerCase();
-
-      var manufacturer =
-        String(game.manufacturer || "")
-          .toLowerCase();
-
-      var keywordMatch =
-        jan.indexOf(keyword) !== -1 ||
-        title.indexOf(keyword) !== -1 ||
-        manufacturer.indexOf(keyword) !== -1;
-
-      var hardwareMatch =
-        hardware === "" ||
-        game.hardware === hardware;
-
-      var ownedMatch =
-        owned === "" ||
-        game.owned === owned;
-
-      return (
-        keywordMatch &&
-        hardwareMatch &&
-        ownedMatch
-      );
-
-    });
-
-  result.sort(function(a, b) {
-
-    var nameA =
-      String(a.title || "");
-
-    var nameB =
-      String(b.title || "");
-
-    return nameA.localeCompare(
-      nameB,
-      "ja",
-      {
-        sensitivity: "base"
-      }
-    );
-
-  });
-
-  showGames(result);
-
-}
-
-
-/*
- * ゲーム一覧表示
- */
-function showGames(games) {
-
-  if (!games || games.length === 0) {
-
-    document.getElementById("gameList").textContent =
-      "登録されているゲームはありません。";
-
-    return;
-
-  }
-
-  var table =
-    document.createElement("table");
-
-  var header =
-    document.createElement("tr");
-
-  var headers = [
-    "JAN",
-    "ゲーム名",
-    "ハード",
-    "所有",
-    "形式",
-    "メーカー",
-    "操作"
-  ];
-
-  headers.forEach(function(name) {
-
-    var th =
-      document.createElement("th");
-
-    th.textContent = name;
-
-    header.appendChild(th);
-
-  });
-
-  table.appendChild(header);
-
-  games.forEach(function(game) {
-
-    var tr =
-      document.createElement("tr");
-
-    addCell(tr, game.jan);
-    addCellStrong(tr, game.title);
-    addCell(tr, game.hardware);
-
-    var ownedCell =
-      document.createElement("td");
-
-    var select =
-      document.createElement("select");
-
-    select.className = "status";
-
-    [
-      "所有",
-      "未所有",
-      "購入予定"
-    ].forEach(function(value) {
-
-      var option =
-        document.createElement("option");
-
-      option.textContent = value;
-      option.value = value;
-
-      if (game.owned === value) {
-        option.selected = true;
-      }
-
-      select.appendChild(option);
-
-    });
-
-    select.onchange = function() {
-
-      changeOwned(
-        game.jan,
-        select.value
-      );
-
-    };
-
-    ownedCell.appendChild(select);
-
-    tr.appendChild(ownedCell);
-
-    addCell(tr, game.format);
-    addCell(tr, game.manufacturer);
-
-    var actionCell =
-      document.createElement("td");
-
-    var editButton =
-      document.createElement("button");
-
-    editButton.textContent = "編集";
-    editButton.className = "action";
-
-    editButton.onclick = function() {
-
-      editGame(game.jan);
-
-    };
-
-    var deleteButton =
-      document.createElement("button");
-
-    deleteButton.textContent = "削除";
-    deleteButton.className = "action";
-
-    deleteButton.onclick = function() {
-
-      deleteGame(game.jan);
-
-    };
-
-    actionCell.appendChild(editButton);
-    actionCell.appendChild(deleteButton);
-
-    tr.appendChild(actionCell);
-
-    table.appendChild(tr);
-
-  });
-
-  var container =
-    document.getElementById("gameList");
-
-  container.innerHTML = "";
-  container.appendChild(table);
-
-}
-
-
-/*
- * セル
- */
-function addCell(row, value) {
-
-  var td =
-    document.createElement("td");
-
-  td.textContent =
-    value || "";
-
-  row.appendChild(td);
-
-}
-
-
-/*
- * 太字セル
- */
-function addCellStrong(row, value) {
-
-  var td =
-    document.createElement("td");
-
-  var strong =
-    document.createElement("strong");
-
-  strong.textContent =
-    value || "";
-
-  td.appendChild(strong);
-
-  row.appendChild(td);
-
-}
-
-
-/*
- * 所有状況変更
- */
-function changeOwned(jan, value) {
-
-  google.script.run
-
-    .withSuccessHandler(function() {
-
-      loadGames();
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      alert(
-        "更新エラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        )
-      );
-
-    })
-
-    .updateOwned(jan, value);
-
-}
-
-
-/*
- * 編集
- */
-function editGame(jan) {
-
-  var game =
-    allGames.find(function(item) {
-
-      return String(item.jan) ===
-        String(jan);
-
-    });
-
-  if (!game) {
-
-    alert("ゲームが見つかりません。");
-
-    return;
-
-  }
-
-  var title =
-    prompt("ゲーム名", game.title);
-
-  if (title === null) return;
-
-  var hardware =
-    prompt("ハード", game.hardware);
-
-  if (hardware === null) return;
-
-  var owned =
-    prompt(
-      "所有状況（所有 / 未所有 / 購入予定）",
-      game.owned
-    );
-
-  if (owned === null) return;
-
-  var format =
-    prompt("形式", game.format);
-
-  if (format === null) return;
-
-  var manufacturer =
-    prompt(
-      "メーカー・販売店",
-      game.manufacturer
-    );
-
-  if (manufacturer === null) return;
-
-  var releaseDate =
-    prompt(
-      "発売日",
-      game.releaseDate
-    );
-
-  if (releaseDate === null) return;
-
-  var memo =
-    prompt("メモ", game.memo);
-
-  if (memo === null) return;
-
-  google.script.run
-
-    .withSuccessHandler(function(result) {
-
-      if (result === "UPDATED") {
-
-        loadGames();
-
-      } else {
-
-        alert("更新できませんでした。");
-
-      }
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      alert(
-        "更新エラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        )
-      );
-
-    })
-
-    .updateGame({
-
-      jan: jan,
-      title: title,
-      hardware: hardware,
-      owned: owned,
-      format: format,
-      manufacturer: manufacturer,
-      releaseDate: releaseDate,
-      memo: memo
-
-    });
-
-}
-
-
-/*
- * 削除
- */
-function deleteGame(jan) {
-
-  var game =
-    allGames.find(function(item) {
-
-      return String(item.jan) ===
-        String(jan);
-
-    });
-
-  if (!game) return;
-
-  if (
-    !confirm(
-      "「" +
-      game.title +
-      "」を削除しますか？"
-    )
-  ) {
-
-    return;
-
-  }
-
-  google.script.run
-
-    .withSuccessHandler(function(result) {
-
-      if (result === "DELETED") {
-
-        loadGames();
-
-      } else {
-
-        alert("削除できませんでした。");
-
-      }
-
-    })
-
-    .withFailureHandler(function(error) {
-
-      alert(
-        "削除エラー：" +
-        (
-          error && error.message
-            ? error.message
-            : error
-        )
-      );
-
-    })
-
-    .deleteGame(jan);
-
-}
-
-
-/*
- * 初期読み込み
- */
-loadHardwares();
-loadGames();
 
 </script>
 
 </body>
 </html>
-`);
-}
-
-
-/*
- * WebアプリURL取得
- */
-function getWebAppUrl() {
-
-  return ScriptApp
-    .getService()
-    .getUrl();
-
-}
-
-
-/*
- * CameraからJANを受け取る
- */
-function receiveJAN(jan) {
-
-  if (!jan) {
-    return "EMPTY";
-  }
-
-  jan =
-    String(jan)
-      .replace(/\D/g, "");
-
-  if (!/^\d{13}$/.test(jan)) {
-    return "INVALID";
-  }
-
-  PropertiesService
-    .getScriptProperties()
-    .setProperty(
-      "LATEST_JAN",
-      jan
-    );
-
-  return "RECEIVED";
-
-}
-
-
-/*
- * 最新JAN取得
- */
-function getLatestJAN() {
-
-  return PropertiesService
-    .getScriptProperties()
-    .getProperty(
-      "LATEST_JAN"
-    ) || "";
-
-}
-
-
-/*
- * 最新JAN削除
- */
-function clearLatestJAN() {
-
-  PropertiesService
-    .getScriptProperties()
-    .deleteProperty(
-      "LATEST_JAN"
-    );
-
-  return "CLEARED";
-
-}
-
-
-/*
- * ハード一覧
- */
-function getHardwares() {
-
-  var props =
-    PropertiesService
-      .getScriptProperties();
-
-  var saved =
-    props.getProperty(
-      "HARDWARE_LIST"
-    );
-
-  if (saved) {
-
-    return JSON.parse(saved);
-
-  }
-
-  var initial = [
-
-    "PS1",
-    "PS2",
-    "PS3",
-    "PS4",
-    "PS5",
-    "Switch",
-    "Nintendo DS"
-
-  ];
-
-  props.setProperty(
-    "HARDWARE_LIST",
-    JSON.stringify(initial)
-  );
-
-  return initial;
-
-}
-
-
-/*
- * ハード追加
- */
-function addHardware(name) {
-
-  var list =
-    getHardwares();
-
-  if (list.indexOf(name) !== -1) {
-
-    return "DUPLICATE";
-
-  }
-
-  list.push(name);
-
-  PropertiesService
-    .getScriptProperties()
-    .setProperty(
-      "HARDWARE_LIST",
-      JSON.stringify(list)
-    );
-
-  return "ADDED";
-
-}
-
-
-/*
- * ゲーム登録
- */
-function addGameIfNotDuplicate(game) {
-
-  var sheet =
-    SpreadsheetApp
-      .getActiveSpreadsheet()
-      .getSheetByName("シート1");
-
-  if (!sheet) {
-
-    throw new Error(
-      "「シート1」が見つかりません。"
-    );
-
-  }
-
-  var data =
-    sheet
-      .getDataRange()
-      .getValues();
-
-  for (
-    var i = 1;
-    i < data.length;
-    i++
-  ) {
-
-    if (
-      String(data[i][0]) ===
-      String(game.jan)
-    ) {
-
-      return "DUPLICATE";
-
-    }
-
-  }
-
-  sheet.appendRow([
-
-    game.jan,
-    game.title,
-    game.hardware,
-    game.owned,
-    game.format,
-    game.manufacturer,
-    game.releaseDate,
-    "",
-    game.memo,
-    new Date()
-
-  ]);
-
-  return "ADDED";
-
-}
-
-
-/*
- * ゲーム一覧
- */
-function getGames() {
-
-  var sheet =
-    SpreadsheetApp
-      .getActiveSpreadsheet()
-      .getSheetByName("シート1");
-
-  if (!sheet) {
-
-    throw new Error(
-      "「シート1」が見つかりません。"
-    );
-
-  }
-
-  var lastRow =
-    sheet.getLastRow();
-
-  if (lastRow <= 1) {
-
-    return [];
-
-  }
-
-  var data =
-    sheet
-      .getRange(
-        2,
-        1,
-        lastRow - 1,
-        10
-      )
-      .getValues();
-
-  return data.map(function(row) {
-
-    return {
-
-      jan:
-        String(row[0] || ""),
-
-      title:
-        String(row[1] || ""),
-
-      hardware:
-        String(row[2] || ""),
-
-      owned:
-        String(row[3] || ""),
-
-      format:
-        String(row[4] || ""),
-
-      manufacturer:
-        String(row[5] || ""),
-
-      releaseDate:
-        String(row[6] || ""),
-
-      memo:
-        String(row[8] || "")
-
-    };
-
-  });
-
-}
-
-
-/*
- * 所有状況更新
- */
-function updateOwned(jan, value) {
-
-  var sheet =
-    SpreadsheetApp
-      .getActiveSpreadsheet()
-      .getSheetByName("シート1");
-
-  var data =
-    sheet
-      .getDataRange()
-      .getValues();
-
-  for (
-    var i = 1;
-    i < data.length;
-    i++
-  ) {
-
-    if (
-      String(data[i][0]) ===
-      String(jan)
-    ) {
-
-      sheet
-        .getRange(
-          i + 1,
-          4
-        )
-        .setValue(value);
-
-      return "UPDATED";
-
-    }
-
-  }
-
-  return "NOT_FOUND";
-
-}
-
-
-/*
- * ゲーム更新
- */
-function updateGame(game) {
-
-  var sheet =
-    SpreadsheetApp
-      .getActiveSpreadsheet()
-      .getSheetByName("シート1");
-
-  var data =
-    sheet
-      .getDataRange()
-      .getValues();
-
-  for (
-    var i = 1;
-    i < data.length;
-    i++
-  ) {
-
-    if (
-      String(data[i][0]) ===
-      String(game.jan)
-    ) {
-
-      sheet
-        .getRange(
-          i + 1,
-          2,
-          1,
-          6
-        )
-        .setValues([[
-          game.title,
-          game.hardware,
-          game.owned,
-          game.format,
-          game.manufacturer,
-          game.releaseDate
-        ]]);
-
-      sheet
-        .getRange(
-          i + 1,
-          9
-        )
-        .setValue(
-          game.memo
-        );
-
-      return "UPDATED";
-
-    }
-
-  }
-
-  return "NOT_FOUND";
-
-}
-
-
-/*
- * ゲーム削除
- */
-function deleteGame(jan) {
-
-  var sheet =
-    SpreadsheetApp
-      .getActiveSpreadsheet()
-      .getSheetByName("シート1");
-
-  var data =
-    sheet
-      .getDataRange()
-      .getValues();
-
-  for (
-    var i = 1;
-    i < data.length;
-    i++
-  ) {
-
-    if (
-      String(data[i][0]) ===
-      String(jan)
-    ) {
-
-      sheet.deleteRow(
-        i + 1
-      );
-
-      return "DELETED";
-
-    }
-
-  }
-
-  return "NOT_FOUND";
-
-}
-
-
-/*
- * 楽天API検索
- */
-function searchRakutenGame(keyword) {
-
-  var props =
-    PropertiesService
-      .getScriptProperties();
-
-  var appId =
-    props.getProperty(
-      "RAKUTEN_APP_ID"
-    );
-
-  var accessKey =
-    props.getProperty(
-      "RAKUTEN_ACCESS_KEY"
-    );
-
-  if (!appId || !accessKey) {
-
-    throw new Error(
-      "楽天APIのApplication IDまたはAccess Keyが設定されていません。"
-    );
-
-  }
-
-  var url =
-    "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701" +
-    "?format=json" +
-    "&formatVersion=2" +
-    "&keyword=" +
-    encodeURIComponent(keyword) +
-    "&applicationId=" +
-    encodeURIComponent(appId) +
-    "&accessKey=" +
-    encodeURIComponent(accessKey) +
-    "&hits=1";
-
-  var response =
-    UrlFetchApp.fetch(
-      url,
-      {
-        method: "get",
-        muteHttpExceptions: true
-      }
-    );
-
-  var status =
-    response.getResponseCode();
-
-  var text =
-    response.getContentText();
-
-  if (status !== 200) {
-
-    throw new Error(
-      "楽天API HTTP " +
-      status +
-      "：" +
-      text
-    );
-
-  }
-
-  var json =
-    JSON.parse(text);
-
-  if (
-    !json.Items ||
-    json.Items.length === 0
-  ) {
-
-    return {
-      found: false
-    };
-
-  }
-
-  var item =
-    json.Items[0];
-
-  if (
-    !item ||
-    !item.itemName
-  ) {
-
-    return {
-      found: false
-    };
-
-  }
-
-  return {
-
-    found: true,
-
-    title:
-      item.itemName || "",
-
-    manufacturer:
-      item.shopName || "",
-
-    releaseDate:
-      ""
-
-  };
-
-}
+```
