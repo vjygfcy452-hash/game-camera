@@ -7,82 +7,116 @@
 
 <meta
   name="viewport"
-  content="width=device-width, initial-scale=1, viewport-fit=cover"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
 >
 
 <title>JANコード読み取り</title>
 
 <style>
 
+html,
 body {
   margin: 0;
-  padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
   background: #111;
-  color: white;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
   text-align: center;
 }
 
 h2 {
-  margin: 10px 0 15px;
+  margin: 18px 10px 10px;
 }
 
-.message {
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 15px 0;
+#message {
+  min-height: 45px;
+  padding: 0 15px;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-.scanButton {
+#cameraArea {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 15px auto 0;
+  background: #000;
+  overflow: hidden;
+}
+
+#video {
   display: block;
   width: 100%;
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 16px;
+  height: auto;
+  background: #000;
+}
+
+#scanFrame {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 35%;
+  height: 30%;
+  border: 3px solid #00ff66;
+  border-radius: 8px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
+}
+
+#scanLabel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 2px 4px #000;
+}
+
+button {
+  display: block;
+  width: calc(100% - 30px);
+  max-width: 700px;
+  margin: 18px auto;
+  padding: 15px;
   border: 0;
-  border-radius: 12px;
-  background: #d97b5f;
-  color: white;
-  font-size: 18px;
+  border-radius: 10px;
+  background: #6689a5;
+  color: #fff;
+  font-size: 17px;
   font-weight: bold;
 }
 
-.copyButton {
-  background: #6689a5;
-  display: none;
-}
-
-.closeButton {
+#stopButton {
   background: #555;
-  font-size: 15px;
 }
 
-#preview {
-  width: 100%;
-  max-width: 500px;
-  max-height: 60vh;
-  object-fit: contain;
-  margin: 10px auto;
-  border-radius: 12px;
-  display: none;
+#copyButton {
+  background: #d97b5f;
 }
 
-#cameraInput {
-  display: none;
+#backButton {
+  background: #555;
 }
 
 #result {
-  display: none;
-  margin: 20px auto;
+  margin: 20px 15px;
   padding: 15px;
-  max-width: 500px;
   background: #222;
-  border-radius: 12px;
-  font-size: 24px;
+  border-radius: 10px;
+  font-size: 20px;
   font-weight: bold;
-  letter-spacing: 2px;
   user-select: text;
   -webkit-user-select: text;
+}
+
+.hidden {
+  display: none;
 }
 
 </style>
@@ -93,41 +127,61 @@ h2 {
 
 <h2>📷 JANコード読み取り</h2>
 
-<div id="message" class="message">
+<div id="message">
 「カメラを起動」を押してください。
 </div>
 
-<input
-  id="cameraInput"
-  type="file"
-  accept="image/*"
-  capture="environment"
->
-
 <button
-  class="scanButton"
-  onclick="openCamera()"
+  id="startButton"
+  onclick="startScanner()"
 >
 📷 カメラを起動
 </button>
 
-<img
-  id="preview"
+<div
+  id="cameraArea"
+  class="hidden"
 >
 
-<div id="result"></div>
+  <video
+    id="video"
+    autoplay
+    muted
+    playsinline
+  ></video>
+
+  <div id="scanFrame"></div>
+
+  <div id="scanLabel">
+    JANコードを緑の枠に合わせてください
+  </div>
+
+</div>
+
+<button
+  id="stopButton"
+  class="hidden"
+  onclick="stopScanner()"
+>
+カメラを停止
+</button>
+
+<div
+  id="result"
+  class="hidden"
+></div>
 
 <button
   id="copyButton"
-  class="scanButton copyButton"
+  class="hidden"
   onclick="copyJAN()"
 >
-📋 JANをコピー
+📋 JANコードをコピー
 </button>
 
 <button
-  class="scanButton closeButton"
-  onclick="goToGameManager()"
+  id="backButton"
+  onclick="goBackToGameManager()"
 >
 ゲーム管理へ戻る
 </button>
@@ -135,158 +189,209 @@ h2 {
 
 <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
 
+
 <script>
 
-const input =
-  document.getElementById("cameraInput");
-
-const message =
-  document.getElementById("message");
-
-const preview =
-  document.getElementById("preview");
-
-const resultBox =
-  document.getElementById("result");
-
-const copyButton =
-  document.getElementById("copyButton");
-
-
+let codeReader = null;
+let controls = null;
+let scanning = false;
 let currentJAN = "";
 
 
 /*
- * カメラ起動
+ * カメラ開始
  */
-function openCamera() {
+async function startScanner() {
 
-  message.textContent =
-    "カメラを起動しています…";
+  const message =
+    document.getElementById("message");
 
-  input.click();
+  const cameraArea =
+    document.getElementById("cameraArea");
+
+  const startButton =
+    document.getElementById("startButton");
+
+  const stopButton =
+    document.getElementById("stopButton");
+
+  const resultBox =
+    document.getElementById("result");
+
+  const copyButton =
+    document.getElementById("copyButton");
+
+  const video =
+    document.getElementById("video");
+
+
+  resultBox.classList.add("hidden");
+
+  copyButton.classList.add("hidden");
+
+  currentJAN = "";
+
+
+  startButton.classList.add("hidden");
+
+  stopButton.classList.remove("hidden");
+
+  cameraArea.classList.remove("hidden");
+
+
+  if (!window.ZXingBrowser) {
+
+    message.textContent =
+      "ZXingの読み込みに失敗しました。";
+
+    return;
+
+  }
+
+
+  try {
+
+    message.textContent =
+      "カメラを起動しています…";
+
+
+    /*
+     * JAN読み取りの基準版と同じ方式
+     *
+     * deviceIdを指定しない。
+     * facingMode: environment により
+     * 背面カメラを優先。
+     */
+    codeReader =
+      new ZXingBrowser.BrowserMultiFormatReader();
+
+
+    scanning = true;
+
+
+    controls =
+      await codeReader.decodeFromVideoDevice(
+
+        undefined,
+
+        video,
+
+        function(result, error) {
+
+          if (!scanning) {
+            return;
+          }
+
+
+          if (
+            result &&
+            result.text
+          ) {
+
+            const raw =
+              String(result.text);
+
+
+            const jan =
+              raw.replace(/\D/g, "");
+
+
+            if (
+              /^\d{13}$/.test(jan)
+            ) {
+
+              scanning = false;
+
+              currentJAN = jan;
+
+
+              resultBox.textContent =
+                "読み取り成功： " + jan;
+
+
+              resultBox.classList.remove(
+                "hidden"
+              );
+
+
+              copyButton.classList.remove(
+                "hidden"
+              );
+
+
+              message.textContent =
+                "JANコードを読み取りました。";
+
+
+              /*
+               * カメラ停止
+               */
+              if (controls) {
+
+                controls.stop();
+
+                controls = null;
+
+              }
+
+
+              if (codeReader) {
+
+                try {
+                  codeReader.reset();
+                } catch (e) {}
+
+              }
+
+            }
+
+          }
+
+        }
+
+      );
+
+
+    message.textContent =
+      "JANコードを緑の枠に合わせてください。";
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    scanning = false;
+
+
+    message.textContent =
+      "カメラ起動エラー：" +
+      (
+        error && error.message
+          ? error.message
+          : error
+      );
+
+
+    startButton.classList.remove(
+      "hidden"
+    );
+
+    stopButton.classList.add(
+      "hidden"
+    );
+
+  }
 
 }
 
 
 /*
- * 写真取得
- */
-input.addEventListener(
-  "change",
-  async function(event) {
-
-    const file =
-      event.target.files &&
-      event.target.files[0];
-
-    if (!file) {
-
-      message.textContent =
-        "カメラがキャンセルされました。";
-
-      return;
-
-    }
-
-    message.textContent =
-      "JANコードを読み取っています…";
-
-
-    const url =
-      URL.createObjectURL(file);
-
-
-    preview.src = url;
-    preview.style.display = "block";
-
-
-    try {
-
-      if (!window.ZXingBrowser) {
-
-        throw new Error(
-          "バーコード読み取り機能を読み込めませんでした。"
-        );
-
-      }
-
-
-      const reader =
-        new ZXingBrowser.BrowserMultiFormatReader();
-
-
-      const result =
-        await reader.decodeFromImageUrl(url);
-
-
-      if (
-        result &&
-        result.text
-      ) {
-
-        const jan =
-          String(result.text)
-            .replace(/\D/g, "");
-
-
-        if (jan.length === 13) {
-
-          currentJAN = jan;
-
-
-          resultBox.textContent =
-            jan;
-
-          resultBox.style.display =
-            "block";
-
-
-          copyButton.style.display =
-            "block";
-
-
-          message.textContent =
-            "JANを読み取りました。";
-
-
-          return;
-
-        }
-
-      }
-
-
-      message.textContent =
-        "JANコードを読み取れませんでした。もう一度撮影してください。";
-
-
-    } catch (error) {
-
-      console.error(error);
-
-      message.textContent =
-        "JANコードを読み取れませんでした。";
-
-    } finally {
-
-      URL.revokeObjectURL(url);
-
-    }
-
-  }
-);
-
-
-/*
- * JANコピー
+ * JANコードをコピー
  */
 async function copyJAN() {
 
   if (!currentJAN) {
-
-    message.textContent =
-      "コピーするJANコードがありません。";
 
     return;
 
@@ -300,16 +405,24 @@ async function copyJAN() {
     );
 
 
-    message.textContent =
-      "JANコードをコピーしました。";
+    document
+      .getElementById("message")
+      .textContent =
+        "JANコードをコピーしました。ゲーム管理のJAN欄に貼り付けてください。";
+
 
   } catch (error) {
 
+    /*
+     * コピー機能の予備処理
+     */
     const textarea =
       document.createElement("textarea");
 
+
     textarea.value =
       currentJAN;
+
 
     textarea.style.position =
       "fixed";
@@ -317,25 +430,31 @@ async function copyJAN() {
     textarea.style.left =
       "-9999px";
 
+
     document.body.appendChild(
       textarea
     );
+
 
     textarea.focus();
 
     textarea.select();
 
+
     document.execCommand(
       "copy"
     );
+
 
     document.body.removeChild(
       textarea
     );
 
 
-    message.textContent =
-      "JANコードをコピーしました。";
+    document
+      .getElementById("message")
+      .textContent =
+        "JANコードをコピーしました。ゲーム管理のJAN欄に貼り付けてください。";
 
   }
 
@@ -343,9 +462,84 @@ async function copyJAN() {
 
 
 /*
+ * カメラ停止
+ */
+function stopScanner() {
+
+  scanning = false;
+
+
+  if (controls) {
+
+    try {
+      controls.stop();
+    } catch (e) {}
+
+    controls = null;
+
+  }
+
+
+  if (codeReader) {
+
+    try {
+      codeReader.reset();
+    } catch (e) {}
+
+    codeReader = null;
+
+  }
+
+
+  const video =
+    document.getElementById("video");
+
+
+  if (
+    video &&
+    video.srcObject
+  ) {
+
+    video.srcObject
+      .getTracks()
+      .forEach(function(track) {
+
+        track.stop();
+
+      });
+
+    video.srcObject = null;
+
+  }
+
+
+  document
+    .getElementById("cameraArea")
+    .classList.add("hidden");
+
+
+  document
+    .getElementById("stopButton")
+    .classList.add("hidden");
+
+
+  document
+    .getElementById("startButton")
+    .classList.remove("hidden");
+
+
+  document
+    getElementById("message")
+    .textContent =
+      "「カメラを起動」を押してください。";
+
+}
+
+
+/*
  * ゲーム管理画面へ戻る
  */
-function goToGameManager() {
+function goBackToGameManager() {
 
   window.location.href =
     "https://script.google.com/macros/s/AKfycbzR1DLFRioq4Sh9sBRRPqOSNaPkVRuofzY4H9r9uxnLV4P_B_tw9wctWRoT-DlGWKMr6w/exec";
